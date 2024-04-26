@@ -87,14 +87,7 @@ class UserType(models.Model):
         This class in inherited from models.Model class
 
         Fields:
-            user_id: Foreign Key from CustomUser model - Mandatory field
-            first_name: CharField - First name - Mandatory field
-            last_name: CharField - last_name - Mandatory field
-            address: CharField - address - Mandatory field
-            contact_number: CharField - contact_number - Mandatory field
-            longitude: CharField - longitude - Mandatory field
-            latitude: CharField - latitude - Mandatory field
-            operating_hours: CharField - operating_hours - Mandatory field
+            roll_type: CharField - roll_type - Mandatory field
             created_at: DateTime field - do not need to set, it has default value
             updated_at: DateTime field - do not need to set, it has default value
             is_deleted: Boolean field - do not need to set, it has default value
