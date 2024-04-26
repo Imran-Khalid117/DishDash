@@ -1,11 +1,10 @@
 from rest_framework.generics import CreateAPIView
 from rest_framework.request import Request
-
 from DishDash import settings
-from .serializers import CustomUserSerializer, OTPViewSetSerializer
-from .models import CustomUser, OTPViewSet
+from .serializers import CustomUserSerializer, OTPViewSetSerializer, UserProfileSerializer
+from .models import CustomUser, OTPViewSet, UserProfile
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, viewsets
 from django.contrib.auth.hashers import make_password
 import random
 from django.core.mail import send_mail
@@ -51,11 +50,14 @@ class CustomUserCreateAPIView(CreateAPIView):
         data["password"] = hashed_password
         "STEP 2:"
         # Create a serializer instance with the modified data
-        serializer = self.get_serializer(data=data)
-        # Validate the serializer data
-        serializer.is_valid(raise_exception=True)
-        # Create new object and save it in the database
-        self.perform_create(serializer)
+        try:
+            serializer = self.get_serializer(data=data)
+            # Validate the serializer data
+            serializer.is_valid(raise_exception=True)
+            # Create new object and save it in the database
+            self.perform_create(serializer)
+        except Exception as e:
+            print(f"Unexpected error: {e}")
 
         # Return response
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -99,7 +101,7 @@ class OTPViewSetCreateAPIView(CreateAPIView):
         return:  rest_framework.response object with status of OK of failure to requesting source for this API
         """
 
-        "STEP1: Retrieving the user id to set the last entry os is_expired to false. For further clarity please"\
+        "STEP1: Retrieving the user id to set the last entry of is_expired to false. For further clarity please"\
             "consult Project Manager or lead"
         # Retrieve the data from the request
         data = request.data
@@ -110,7 +112,7 @@ class OTPViewSetCreateAPIView(CreateAPIView):
         # Update the 'is_expired' field of the retrieved object
         if ot_data:
             ot_data.is_expired = True
-            ot_data.save()
+            ot_data.save()  # Saving the is_expired value in database.
 
         "STEP2: We are generating the 6 digit otp and setting up the data to be saved"
         otp_random = random.randrange(100000, 1000000)
@@ -118,11 +120,14 @@ class OTPViewSetCreateAPIView(CreateAPIView):
         email = data["email"]
 
         "STEP3: We are getting the correct serializer instance, validating the data and then saving it in database."
-        serializer = self.get_serializer(data=data)
-        # Validate the serializer data
-        serializer.is_valid(raise_exception=True)
-        # Creating new entry against the user id provided for OTP.
-        self.perform_create(serializer)
+        try:
+            serializer = self.get_serializer(data=data)
+            # Validate the serializer data
+            serializer.is_valid(raise_exception=True)
+            # Creating new entry against the user id provided for OTP.
+            self.perform_create(serializer)
+        except Exception as e:
+            print(f"Unexpected error: {e}")
 
         "STEP4: Sending OTP to user email "
         subject = 'Your OTP Password'
@@ -141,3 +146,22 @@ class OTPViewSetCreateAPIView(CreateAPIView):
 
 
 OTPView_Set_Create_APIView = OTPViewSetCreateAPIView.as_view()
+
+
+class UserProfileViewSet(viewsets.ModelViewSet):
+    queryset = UserProfile.objects.all()
+    serializer_class = UserProfileSerializer
+
+    """
+    This class inherits from viewsets.ModelViewSet generic class, that specifically designed for adding, updating,
+    retrieving.
+    
+    Methods to Access Data:
+        To list all objects: GET /UserProfile/
+        To retrieve a single object by its primary key: GET /UserProfile/{pk}/
+        To create a new object: POST /UserProfile/
+        To update an existing object completely: PUT /UserProfile/{pk}/
+        To update an existing object partially: PATCH /UserProfile/{pk}/
+        To delete an existing object: DELETE /UserProfile/{pk}/
+    """
+
