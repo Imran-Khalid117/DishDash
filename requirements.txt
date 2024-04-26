@@ -1,5 +1,5 @@
-asgiref==3.4.1
-Django==3.2.25
+asgiref==3.8.1
+Django==5.0.4
 django-rest-framework==0.1.0
 djangorestframework==3.15.1
 importlib-resources==5.4.0
