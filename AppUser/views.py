@@ -63,8 +63,6 @@ class CustomUserCreateAPIView(CreateAPIView):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
-custom_user_create_view = CustomUserCreateAPIView.as_view()
-
 # Create your views here.
 
 
