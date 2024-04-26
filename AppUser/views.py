@@ -1,8 +1,9 @@
 from rest_framework.generics import CreateAPIView
 from rest_framework.request import Request
 from DishDash import settings
-from .serializers import CustomUserSerializer, OTPViewSetSerializer, UserProfileSerializer, UserTypeSerializer
-from .models import CustomUser, OTPViewSet, UserProfile, UserType
+from .serializers import CustomUserSerializer, OTPViewSetSerializer, UserProfileSerializer, UserTypeSerializer, \
+    BusinessProfileSerializer, BusinessManagerSerializer
+from .models import CustomUser, OTPViewSet, UserProfile, UserType, BusinessProfile, BusinessManager
 from rest_framework.response import Response
 from rest_framework import status, viewsets
 from django.contrib.auth.hashers import make_password
@@ -179,4 +180,40 @@ class UserTypeViewSet(viewsets.ModelViewSet):
         To update an existing object completely: PUT /UserType/{pk}/
         To update an existing object partially: PATCH /UserType/{pk}/
         To delete an existing object: DELETE /UserType/{pk}/
+    """
+
+
+class BusinessProfileViewSet(viewsets.ModelViewSet):
+    queryset = BusinessProfile.objects.all()
+    serializer_class = BusinessProfileSerializer
+
+    """
+    This class inherits from viewsets.ModelViewSet generic class, that specifically designed for adding, updating and
+    retrieving.
+
+    Methods to Access Data:
+        To list all objects: GET /BusinessProfile/
+        To retrieve a single object by its primary key: GET /BusinessProfile/{pk}/
+        To create a new object: POST /BusinessProfile/
+        To update an existing object completely: PUT /BusinessProfile/{pk}/
+        To update an existing object partially: PATCH /BusinessProfile/{pk}/
+        To delete an existing object: DELETE /BusinessProfile/{pk}/
+    """
+
+
+class BusinessManagerViewSet(viewsets.ModelViewSet):
+    queryset = BusinessManager.objects.all()
+    serializer_class = BusinessManagerSerializer
+
+    """
+    This class inherits from viewsets.ModelViewSet generic class, that specifically designed for adding, updating and
+    retrieving.
+
+    Methods to Access Data:
+        To list all objects: GET /BusinessManager/
+        To retrieve a single object by its primary key: GET /BusinessManager/{pk}/
+        To create a new object: POST /BusinessManager/
+        To update an existing object completely: PUT /BusinessManager/{pk}/
+        To update an existing object partially: PATCH /BusinessManager/{pk}/
+        To delete an existing object: DELETE /BusinessManager/{pk}/
     """
