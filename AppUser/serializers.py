@@ -32,7 +32,12 @@ class OTPViewSetSerializer(serializers.ModelSerializer):
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
+    """
+            This class in inherited from serializers.ModelSerializer class.
+
+            Fields to show:
+               'id', 'user_id', 'first_name', 'last_name', 'address', 'contact_number','longitude', 'latitude'
+            """
     class Meta:
         model = UserProfile
-        fields = ['id', 'user_id', 'first_name', 'last_name', 'address', 'contact_number','longitude', 'latitude',
-                  'operating_hours']
+        fields = ['id', 'user_id', 'first_name', 'last_name', 'address', 'contact_number','longitude', 'latitude']

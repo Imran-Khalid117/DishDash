@@ -74,7 +74,7 @@ class UserProfile(models.Model):
     contact_number = models.CharField(max_length=15, blank=False, null=False)
     longitude = models.CharField(max_length=30, blank=False, null=False)
     latitude = models.CharField(max_length=30, blank=False, null=False)
-    operating_hours = models.CharField(max_length=500, blank=False, null=False)
+    # operating_hours = models.CharField(max_length=500, blank=False, null=False)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(default=timezone.now)
     is_deleted = models.BooleanField(default=False)

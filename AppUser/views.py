@@ -153,7 +153,7 @@ class UserProfileViewSet(viewsets.ModelViewSet):
     serializer_class = UserProfileSerializer
 
     """
-    This class inherits from viewsets.ModelViewSet generic class, that specifically designed for adding, updating,
+    This class inherits from viewsets.ModelViewSet generic class, that specifically designed for adding, updating and
     retrieving.
     
     Methods to Access Data:
@@ -164,4 +164,3 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         To update an existing object partially: PATCH /UserProfile/{pk}/
         To delete an existing object: DELETE /UserProfile/{pk}/
     """
-
