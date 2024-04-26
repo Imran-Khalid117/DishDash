@@ -1,8 +1,8 @@
 from rest_framework.generics import CreateAPIView
 from rest_framework.request import Request
 from DishDash import settings
-from .serializers import CustomUserSerializer, OTPViewSetSerializer, UserProfileSerializer
-from .models import CustomUser, OTPViewSet, UserProfile
+from .serializers import CustomUserSerializer, OTPViewSetSerializer, UserProfileSerializer, UserTypeSerializer
+from .models import CustomUser, OTPViewSet, UserProfile, UserType
 from rest_framework.response import Response
 from rest_framework import status, viewsets
 from django.contrib.auth.hashers import make_password
@@ -163,4 +163,22 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         To update an existing object completely: PUT /UserProfile/{pk}/
         To update an existing object partially: PATCH /UserProfile/{pk}/
         To delete an existing object: DELETE /UserProfile/{pk}/
+    """
+
+
+class UserTypeViewSet(viewsets.ModelViewSet):
+    queryset = UserType.objects.all()
+    serializer_class = UserTypeSerializer
+
+    """
+    This class inherits from viewsets.ModelViewSet generic class, that specifically designed for adding, updating and
+    retrieving.
+
+    Methods to Access Data:
+        To list all objects: GET /UserType/
+        To retrieve a single object by its primary key: GET /UserType/{pk}/
+        To create a new object: POST /UserType/
+        To update an existing object completely: PUT /UserType/{pk}/
+        To update an existing object partially: PATCH /UserType/{pk}/
+        To delete an existing object: DELETE /UserType/{pk}/
     """

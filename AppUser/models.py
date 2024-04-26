@@ -51,22 +51,21 @@ class OTPViewSet(models.Model):
 
 class UserProfile(models.Model):
     """
-            This class in inherited from models.Model class
+        This class in inherited from models.Model class
 
-            Fields:
-                user_id: Foreign Key from CustomUser model - Mandatory field
-                first_name: CharField - First name - Mandatory field
-                last_name: CharField - last_name - Mandatory field
-                address: CharField - address - Mandatory field
-                contact_number: CharField - contact_number - Mandatory field
-                longitude: CharField - longitude - Mandatory field
-                latitude: CharField - latitude - Mandatory field
-                operating_hours: CharField - operating_hours - Mandatory field
-                is_expired: Boolean field - do not need to set, it has default value
-                created_at: DateTime field - do not need to set, it has default value
-                updated_at: DateTime field - do not need to set, it has default value
-                is_deleted: Boolean field - do not need to set, it has default value
-            """
+        Fields:
+            user_id: Foreign Key from CustomUser model - Mandatory field
+            first_name: CharField - First name - Mandatory field
+            last_name: CharField - last_name - Mandatory field
+            address: CharField - address - Mandatory field
+            contact_number: CharField - contact_number - Mandatory field
+            longitude: CharField - longitude - Mandatory field
+            latitude: CharField - latitude - Mandatory field
+            operating_hours: CharField - operating_hours - Mandatory field
+            created_at: DateTime field - do not need to set, it has default value
+            updated_at: DateTime field - do not need to set, it has default value
+            is_deleted: Boolean field - do not need to set, it has default value
+    """
     user_id = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name="user_profile")
     first_name = models.CharField(max_length=20, blank=False, null=False)
     last_name = models.CharField(max_length=20, blank=False, null=False)
@@ -81,3 +80,30 @@ class UserProfile(models.Model):
 
     class Meta:
         db_table = "user_profile"
+
+
+class UserType(models.Model):
+    """
+        This class in inherited from models.Model class
+
+        Fields:
+            user_id: Foreign Key from CustomUser model - Mandatory field
+            first_name: CharField - First name - Mandatory field
+            last_name: CharField - last_name - Mandatory field
+            address: CharField - address - Mandatory field
+            contact_number: CharField - contact_number - Mandatory field
+            longitude: CharField - longitude - Mandatory field
+            latitude: CharField - latitude - Mandatory field
+            operating_hours: CharField - operating_hours - Mandatory field
+            created_at: DateTime field - do not need to set, it has default value
+            updated_at: DateTime field - do not need to set, it has default value
+            is_deleted: Boolean field - do not need to set, it has default value
+    """
+
+    roll_type = models.CharField(max_length=20, blank=False, null=False)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(default=timezone.now)
+    is_deleted = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = "user_type"
