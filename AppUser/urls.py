@@ -8,6 +8,7 @@ router.register(f'CustomUser', CustomUserViewSets)
 urlpatterns = [
     path("CustomUser/signup/", CustomUserViewSets.as_view({'post': 'signup'}), name="signup"),
     path("CustomUser/login/", CustomUserViewSets.as_view({'post': 'login'}), name="login"),
+    path("CustomUser/logout/", CustomUserViewSets.as_view({'post': 'logout'}), name="logout"),
     path("generate_otp/", OTPViewSetCreateAPIView.as_view(), name="generate_otp"),
 
 ]

@@ -1,8 +1,12 @@
+from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 from datetime import timedelta
 from rest_framework.decorators import action
 from rest_framework.generics import CreateAPIView
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
+from rest_framework_simplejwt.authentication import JWTAuthentication
+
 from DishDash import settings
 from .serializers import CustomUserSerializer, OTPViewSetSerializer, UserProfileSerializer, UserTypeSerializer, \
     BusinessProfileSerializer, BusinessManagerSerializer
@@ -29,6 +33,8 @@ class CustomUserViewSets(viewsets.ModelViewSet):
     """
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserSerializer
+    # authentication_classes = [JWTAuthentication]
+    # permission_classes = [IsAuthenticated]
 
     @action(detail=True, methods=['post'])
     def signup(self, request: Request, *args: any, **kwargs: any) -> Response:
@@ -86,6 +92,13 @@ class CustomUserViewSets(viewsets.ModelViewSet):
 
         In case if access token is not expired based on the datatime saved it will return the same access token,
         refresh token and will not update the expiry datetime field.
+
+        param:
+        request: Request (Object) this pertains the request from the POST call from the calling application.
+        **args: These are additional parameters
+        **kwargs: These are additional - optional keyword parameters
+
+        return:  rest_framework.response object with status of OK of failure to requesting source for this API.
         """
         # Step 1: we are extracting "username" and "password" from request data
         data = {"username": request.data.get('username'), "password": request.data.get('password')}
@@ -97,7 +110,7 @@ class CustomUserViewSets(viewsets.ModelViewSet):
         try:
             # Step 2.3 extracting user details from DB if not then raise exception
             user = CustomUser.objects.get(username=data.get("username"))
-            # checking if access token of a user is already set
+            # Step 2.1 checking if access token of a user is already set
             if user.access_token_expiry:
                 time_delta = (user.access_token_expiry - timezone.now()).total_seconds() / 3600
                 # if access token is set we authenticate the user.
@@ -132,6 +145,7 @@ class CustomUserViewSets(viewsets.ModelViewSet):
                 else:
                     return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
             else:
+                # This block will fire if user access token expiry is empty, so we create new entry.
                 if check_password(data.get("password"), user.password):
                     login_data = {}
                     # Generate JWT tokens
@@ -156,6 +170,37 @@ class CustomUserViewSets(viewsets.ModelViewSet):
                     return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
         except ValueError:
             return Response({'error': 'User does not exist'}, status=status.HTTP_404_NOT_FOUND)
+
+    @action(detail=False, methods=['post'])
+    def logout(self, request: Request) -> Response:
+        data = {"username": request.data.get('username')}
+        user = CustomUser.objects.get(username=data.get("username"))
+        jwt_token = None
+        if 'Authorization' in request.META:
+            print("test")
+            # Get the JWT token from the request headers
+            auth_header = request.META['Authorization']
+            print("test")
+            # Token should be in the format "Bearer <token>"
+            jwt_token = auth_header.split()[1] if auth_header.startswith('Bearer') else None
+            print(jwt_token)
+
+        try:
+            if jwt_token:
+                # Blacklist the refresh token
+                token = RefreshToken(user.refresh_token)
+                token.blacklist()
+                user.refresh_token = None
+                user.access_token_expiry = None
+                user.access_token = None
+                user.save()
+                return Response({"message": "Logout successful"}, status=status.HTTP_200_OK)
+            else:
+                return Response({"error": "Refresh token not provided"}, status=status.HTTP_400_BAD_REQUEST)
+        except ObjectDoesNotExist:
+            return Response({"error": "User does not exist"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": "Invalid token"}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 class OTPViewSetCreateAPIView(CreateAPIView):
@@ -191,8 +236,8 @@ class OTPViewSetCreateAPIView(CreateAPIView):
         return:  rest_framework.response object with status of OK of failure to requesting source for this API
         """
 
-        "STEP1: Retrieving the user id to set the last entry of is_expired to false. For further clarity please" \
-        "consult Project Manager or lead"
+        # STEP1: Retrieving the user id to set the last entry of is_expired to false. For further clarity please
+        # consult Project Manager or lead
 
         # Retrieve the data from the request
         data = request.data
