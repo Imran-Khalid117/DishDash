@@ -1,3 +1,6 @@
+from django.utils import timezone
+from datetime import timedelta
+from rest_framework.decorators import action
 from rest_framework.generics import CreateAPIView
 from rest_framework.request import Request
 from DishDash import settings
@@ -6,23 +9,29 @@ from .serializers import CustomUserSerializer, OTPViewSetSerializer, UserProfile
 from .models import CustomUser, OTPViewSet, UserProfile, UserType, BusinessProfile, BusinessManager
 from rest_framework.response import Response
 from rest_framework import status, viewsets
-from django.contrib.auth.hashers import make_password
+from django.contrib.auth.hashers import make_password, check_password
 import random
 from django.core.mail import send_mail
+from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 
 
-class CustomUserCreateAPIView(CreateAPIView):
+class CustomUserViewSets(viewsets.ModelViewSet):
     """
     This class inherits from CreateAPIView generic class, that specifically designed for adding data into database.
 
     Methods:
-        create: param(request: HTTPRequest object, **args, **kwargs) This method is override in order to process
-        data before adding into database.
+        sign up: param(request: HTTPRequest object, **args, **kwargs)
+            This is the method that will be called when creating a new user
+        login: param (request: Request, pk=None, *args: any, **kwargs: any) -> Response:
+            In this method we have implemented the login functionality.
+        logout: param (request: Request, pk=None, *args: any, **kwargs: any) -> Response:
+            In this method we are setting up logout functionality
     """
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserSerializer
 
-    def create(self, request: Request, *args: any, **kwargs: any) -> Response:
+    @action(detail=True, methods=['post'])
+    def signup(self, request: Request, *args: any, **kwargs: any) -> Response:
         """
         In this method we are getting the email, username and password from calling function. This is sent in
         request body as a JSON object. Create method extracts the data provided process it and create a new user
@@ -51,8 +60,8 @@ class CustomUserCreateAPIView(CreateAPIView):
         data["password"] = hashed_password
         "STEP 2:"
         # Create a serializer instance with the modified data
+        serializer = self.get_serializer(data=data)
         try:
-            serializer = self.get_serializer(data=data)
             # Validate the serializer data
             serializer.is_valid(raise_exception=True)
             # Create new object and save it in the database
@@ -63,8 +72,90 @@ class CustomUserCreateAPIView(CreateAPIView):
         # Return response
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+    @action(detail=True, methods=['post'])
+    def login(self, request: Request, pk=None, *args: any, **kwargs: any) -> Response:
+        """
+        This method implements the login functionality for user to login. We are also generating the access token,
+        refresh token and calculated access token expiry field data and saving it in database.
 
-# Create your views here.
+        In case if user is just created - this method will generate the new access token,
+        refresh token and calculated access token expiry field data and saving it in database.
+
+        In case if user has access token it will check the expiry and in case expiry datatime is expired i.e. after 6hrs
+        it will again generate a new access token, refresh token and update the access token expiry field.
+
+        In case if access token is not expired based on the datatime saved it will return the same access token,
+        refresh token and will not update the expiry datetime field.
+        """
+        # Step 1: we are extracting "username" and "password" from request data
+        data = {"username": request.data.get('username'), "password": request.data.get('password')}
+
+        # Step 2: In this try catch block we are testing following things.
+        # 1) We will check if access token is set and if it expired then generate a new token
+        # 2) We will check if access token is not expired then return same access token, refresh token and expiry date.
+        # 3) We will also verify if user exists in database.
+        try:
+            # Step 2.3 extracting user details from DB if not then raise exception
+            user = CustomUser.objects.get(username=data.get("username"))
+            # checking if access token of a user is already set
+            if user.access_token_expiry:
+                time_delta = (user.access_token_expiry - timezone.now()).total_seconds() / 3600
+                # if access token is set we authenticate the user.
+                if check_password(data.get("password"), user.password):
+                    # After authentication, we verify that if token is expired - in case it is expired we generate
+                    # a new token and save it
+                    if time_delta < 0:
+                        # Generate JWT tokens
+                        refresh = RefreshToken.for_user(user)
+                        access = AccessToken.for_user(user)
+
+                        # Set expiration time for access token (e.g., 1 hour)
+                        access_expiry = timezone.now() + timedelta(hours=6)
+
+                        # Update user tokens and access token expiry
+                        user.refresh_token = str(refresh)
+                        user.access_token = str(access)
+                        user.access_token_expiry = access_expiry
+                        user.save()
+
+                        return Response({
+                            'refresh': str(refresh),
+                            'access': str(access),
+                            'access_token_expiry': user.access_token_expiry,
+                        }, status=status.HTTP_201_CREATED)
+                    else:
+                        return Response({
+                            'refresh': str(user.refresh_token),
+                            'access': str(user.access_token),
+                            'access_token_expiry': user.access_token_expiry,
+                        }, status=status.HTTP_202_ACCEPTED)
+                else:
+                    return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+            else:
+                if check_password(data.get("password"), user.password):
+                    login_data = {}
+                    # Generate JWT tokens
+                    refresh = RefreshToken.for_user(user)
+                    access = AccessToken.for_user(user)
+
+                    # Set expiration time for access token (e.g., 1 hour)
+                    access_expiry = timezone.now() + timedelta(hours=6)
+
+                    # Update user tokens and access token expiry
+                    user.refresh_token = str(refresh)
+                    user.access_token = str(access)
+                    user.access_token_expiry = access_expiry
+                    user.save()
+
+                    return Response({
+                        'refresh': str(refresh),
+                        'access': str(access),
+                        'access_token_expiry': user.access_token_expiry,
+                    }, status=status.HTTP_201_CREATED)
+                else:
+                    return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+        except ValueError:
+            return Response({'error': 'User does not exist'}, status=status.HTTP_404_NOT_FOUND)
 
 
 class OTPViewSetCreateAPIView(CreateAPIView):
@@ -100,8 +191,9 @@ class OTPViewSetCreateAPIView(CreateAPIView):
         return:  rest_framework.response object with status of OK of failure to requesting source for this API
         """
 
-        "STEP1: Retrieving the user id to set the last entry of is_expired to false. For further clarity please"\
-            "consult Project Manager or lead"
+        "STEP1: Retrieving the user id to set the last entry of is_expired to false. For further clarity please" \
+        "consult Project Manager or lead"
+
         # Retrieve the data from the request
         data = request.data
 
@@ -119,8 +211,9 @@ class OTPViewSetCreateAPIView(CreateAPIView):
         email = data["email"]
 
         "STEP3: We are getting the correct serializer instance, validating the data and then saving it in database."
+        serializer = self.get_serializer(data=data)
         try:
-            serializer = self.get_serializer(data=data)
+
             # Validate the serializer data
             serializer.is_valid(raise_exception=True)
             # Creating new entry against the user id provided for OTP.
@@ -132,7 +225,7 @@ class OTPViewSetCreateAPIView(CreateAPIView):
         subject = 'Your OTP Password'
         message = f'Your OTP password is {otp_random}'
         email_from = settings.EMAIL_HOST_USER
-        recipient_list = [email,]
+        recipient_list = [email, ]
         try:
             send_mail(subject, message, email_from, recipient_list)
         except Exception as e:
