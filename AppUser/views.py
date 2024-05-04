@@ -5,8 +5,6 @@ from rest_framework.decorators import action
 from rest_framework.generics import CreateAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
-from rest_framework_simplejwt.authentication import JWTAuthentication
-
 from DishDash import settings
 from .serializers import CustomUserSerializer, OTPViewSetSerializer, UserProfileSerializer, UserTypeSerializer, \
     BusinessProfileSerializer, BusinessManagerSerializer
@@ -33,8 +31,6 @@ class CustomUserViewSets(viewsets.ModelViewSet):
     """
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserSerializer
-    # authentication_classes = [JWTAuthentication]
-    # permission_classes = [IsAuthenticated]
 
     @action(detail=True, methods=['post'])
     def signup(self, request: Request, *args: any, **kwargs: any) -> Response:
@@ -171,25 +167,22 @@ class CustomUserViewSets(viewsets.ModelViewSet):
         except ValueError:
             return Response({'error': 'User does not exist'}, status=status.HTTP_404_NOT_FOUND)
 
-    @action(detail=False, methods=['post'])
+    @action(detail=True, methods=['post'])
     def logout(self, request: Request) -> Response:
         data = {"username": request.data.get('username')}
         user = CustomUser.objects.get(username=data.get("username"))
+        print(request.headers['Authorization'])
         jwt_token = None
-        if 'Authorization' in request.META:
-            print("test")
+        if 'Authorization' in request.headers:
             # Get the JWT token from the request headers
-            auth_header = request.META['Authorization']
-            print("test")
+            auth_header = request.headers['Authorization']
             # Token should be in the format "Bearer <token>"
             jwt_token = auth_header.split()[1] if auth_header.startswith('Bearer') else None
-            print(jwt_token)
-
         try:
             if jwt_token:
                 # Blacklist the refresh token
-                token = RefreshToken(user.refresh_token)
-                token.blacklist()
+                # token = RefreshToken(user.refresh_token)
+                # token.blacklist()
                 user.refresh_token = None
                 user.access_token_expiry = None
                 user.access_token = None
