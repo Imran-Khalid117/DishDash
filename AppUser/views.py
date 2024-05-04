@@ -167,11 +167,10 @@ class CustomUserViewSets(viewsets.ModelViewSet):
         except ValueError:
             return Response({'error': 'User does not exist'}, status=status.HTTP_404_NOT_FOUND)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def logout(self, request: Request) -> Response:
         data = {"username": request.data.get('username')}
         user = CustomUser.objects.get(username=data.get("username"))
-        print(request.headers['Authorization'])
         jwt_token = None
         if 'Authorization' in request.headers:
             # Get the JWT token from the request headers
@@ -180,9 +179,6 @@ class CustomUserViewSets(viewsets.ModelViewSet):
             jwt_token = auth_header.split()[1] if auth_header.startswith('Bearer') else None
         try:
             if jwt_token:
-                # Blacklist the refresh token
-                # token = RefreshToken(user.refresh_token)
-                # token.blacklist()
                 user.refresh_token = None
                 user.access_token_expiry = None
                 user.access_token = None
