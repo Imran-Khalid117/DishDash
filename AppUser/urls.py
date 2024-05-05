@@ -11,5 +11,6 @@ urlpatterns = [
     path("CustomUser/login/", CustomUserViewSets.as_view({'post': 'login'}), name="login"),
     path("CustomUser/logout/", CustomUserViewSets.as_view({'post': 'logout'}), name="logout"),
     path("OTPViewSet/new_otp/", OTPViewSetCreateAPIView.as_view({'post': 'new_otp'}), name="new_otp"),
+    path("OTPViewSet/verify_otp/", OTPViewSetCreateAPIView.as_view({'post': 'verify_otp'}), name="verify_otp"),
 
 ]

@@ -169,7 +169,7 @@ class CustomUserViewSets(viewsets.ModelViewSet):
             return Response({'error': 'User does not exist'}, status=status.HTTP_404_NOT_FOUND)
 
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
-    def logout(self, request: Request) -> Response:
+    def logout(self, request: Request, *args, **kwargs) -> Response:
         """
         In this method we have implemented the logout functionality. This method will only be accessible
         if user is authenticated. This function receives username in request body and access token in request
@@ -178,9 +178,12 @@ class CustomUserViewSets(viewsets.ModelViewSet):
         We filter out the user based on the username and extract the access token from the header. Access token
         is passed in header so that to make sure that user is authenticated user.
 
-        params:
-        request: (Request object) This will contain the JSON body arguments.
-        returns: (Response object) This will be JSON object returned from this method.
+        Params:
+        request: HTTP Request object - you can access all fields from this variable
+        **args: These are additional parameters
+        **kwargs: These are additional - optional keyword parameters
+
+        return:  rest_framework.response object with status of OK of failure to requesting source for this API
         """
         # Extracting the username from request body.
         data = {"username": request.data.get('username')}
@@ -254,7 +257,7 @@ class OTPViewSetCreateAPIView(viewsets.ModelViewSet):
         ot_data = OTPViewSet.objects.filter(user_id=data.get("user_id")).last()
 
         # Update the 'is_expired' field of the retrieved object
-        if ot_data:
+        if not ot_data.is_expired:
             ot_data.is_expired = True
             ot_data.save()  # Saving the is_expired value in database.
 
@@ -288,6 +291,41 @@ class OTPViewSetCreateAPIView(viewsets.ModelViewSet):
         "STEP5: Returning status response back to calling program"
         # Return response
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['post'])
+    def verify_otp(self, request: Request, *args: any, **kwargs: any) -> Response:
+        """
+        In this method we are verifying the OTP provided by application through request body with entry in
+        the database.
+
+        Params:
+        request: HTTP Request object - you can access all fields from this variable
+        **args: These are additional parameters
+        **kwargs: These are additional - optional keyword parameters
+
+        return:  rest_framework.response object with status of OK of failure to requesting source for this API
+        """
+        # STEP1: Retrieving the user id to set the last entry of is_expired to false. For further clarity please
+        # consult Project Manager or lead
+
+        # Retrieve the data from the request
+        data = request.data
+
+        # Filter the OTPViewSet objects based on the user_id and get the last one
+        ot_data = OTPViewSet.objects.filter(user_id=data.get("user_id")).last()
+        # This check should always be true as we are getting the last entry of OTP created and it will have
+        # active OTP.
+        if not ot_data.is_expired:
+            # comparing the OTP from request with OTP in database
+            if data.get("otp") == ot_data.otp_str:
+                # if they are matched we are going to expire this OTP entry in the database
+                ot_data.is_expired = True
+                ot_data.save()  # Saving the is_expired value in database.
+                return Response({"message": "OTP MATCHED"}, status=status.HTTP_200_OK)
+            else:
+                return Response({"message": "OTP DOES NOT MATCH"}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response({"message": "NO ACTIVE OTP FOUND"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class UserProfileViewSet(viewsets.ModelViewSet):
