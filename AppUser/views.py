@@ -141,7 +141,8 @@ class CustomUserViewSets(viewsets.ModelViewSet):
                 else:
                     return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
             else:
-                # This block will fire if user access token expiry is empty, so we create new entry.
+                # This block will fire if user access token expiry is empty, so we add new tokens and expiry date and
+                # time.
                 if check_password(data.get("password"), user.password):
                     login_data = {}
                     # Generate JWT tokens
@@ -169,15 +170,32 @@ class CustomUserViewSets(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def logout(self, request: Request) -> Response:
+        """
+        In this method we have implemented the logout functionality. This method will only be accessible
+        if user is authenticated. This function receives username in request body and access token in request
+        header.
+
+        We filter out the user based on the username and extract the access token from the header. Access token
+        is passed in header so that to make sure that user is authenticated user.
+
+        params:
+        request: (Request object) This will contain the JSON body arguments.
+        returns: (Response object) This will be JSON object returned from this method.
+        """
+        # Extracting the username from request body.
         data = {"username": request.data.get('username')}
+        # extracting the user from database with respect to username provided in request body.
         user = CustomUser.objects.get(username=data.get("username"))
         jwt_token = None
+        # We are checking here if application has provided access token if that is so then request header
+        # will have Authorization key in request dictionary
         if 'Authorization' in request.headers:
             # Get the JWT token from the request headers
             auth_header = request.headers['Authorization']
             # Token should be in the format "Bearer <token>"
             jwt_token = auth_header.split()[1] if auth_header.startswith('Bearer') else None
         try:
+            # If we have access token then we set all token and expiry field to none.
             if jwt_token:
                 user.refresh_token = None
                 user.access_token_expiry = None
@@ -192,7 +210,7 @@ class CustomUserViewSets(viewsets.ModelViewSet):
             return Response({"error": "Invalid token"}, status=status.HTTP_401_UNAUTHORIZED)
 
 
-class OTPViewSetCreateAPIView(CreateAPIView):
+class OTPViewSetCreateAPIView(viewsets.ModelViewSet):
     """
     This class inherits from CreateAPIView generic class, that specifically designed for adding data into database.
 
@@ -203,7 +221,8 @@ class OTPViewSetCreateAPIView(CreateAPIView):
     queryset = OTPViewSet.objects.all()
     serializer_class = OTPViewSetSerializer
 
-    def create(self, request: Request, *args: any, **kwargs: any) -> Response:
+    @action(detail=True, methods=['post'])
+    def new_otp(self, request: Request, *args: any, **kwargs: any) -> Response:
         """
         In this view method we are taking HTTP request from system, that provides user id and email.
 
@@ -269,9 +288,6 @@ class OTPViewSetCreateAPIView(CreateAPIView):
         "STEP5: Returning status response back to calling program"
         # Return response
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-
-OTPView_Set_Create_APIView = OTPViewSetCreateAPIView.as_view()
 
 
 class UserProfileViewSet(viewsets.ModelViewSet):
