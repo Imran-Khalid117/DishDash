@@ -2,7 +2,6 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 from datetime import timedelta
 from rest_framework.decorators import action
-from rest_framework.generics import CreateAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from DishDash import settings
@@ -144,7 +143,6 @@ class CustomUserViewSets(viewsets.ModelViewSet):
                 # This block will fire if user access token expiry is empty, so we add new tokens and expiry date and
                 # time.
                 if check_password(data.get("password"), user.password):
-                    login_data = {}
                     # Generate JWT tokens
                     refresh = RefreshToken.for_user(user)
                     access = AccessToken.for_user(user)
@@ -308,12 +306,15 @@ class OTPViewSetCreateAPIView(viewsets.ModelViewSet):
         # STEP1: Retrieving the user id to set the last entry of is_expired to false. For further clarity please
         # consult Project Manager or lead
 
+        # STEP 2: We verify the OTP code provided by application with OTP entry in database
+
         # Retrieve the data from the request
         data = request.data
 
-        # Filter the OTPViewSet objects based on the user_id and get the last one
+        # STEP1: Filter the OTPViewSet objects based on the user_id and get the last one
         ot_data = OTPViewSet.objects.filter(user_id=data.get("user_id")).last()
-        # This check should always be true as we are getting the last entry of OTP created and it will have
+
+        # STEP 2: This check should always be true as we are getting the last entry of OTP created, and it will have
         # active OTP.
         if not ot_data.is_expired:
             # comparing the OTP from request with OTP in database
