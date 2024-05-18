@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils import timezone
+from rest_framework import serializers
 
 
 # Create your models here.
@@ -16,8 +17,8 @@ class CustomUser(AbstractUser):
         is_deleted: Boolean field - do not need to set, it has default value
     """
     # Add any additional fields you need for your user model
-    refresh_token = models.CharField(max_length=400, blank=True, null=True)
-    access_token = models.CharField(max_length=400, blank=True, null=True)
+    refresh_token = models.CharField(max_length=500, blank=True, null=True)
+    access_token = models.CharField(max_length=500, blank=True, null=True)
     access_token_expiry = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(default=timezone.now)
@@ -27,7 +28,7 @@ class CustomUser(AbstractUser):
         db_table = "user"
 
 
-class OTPViewSet(models.Model):
+class OTPVerification(models.Model):
     """
         This class in inherited from models.Model class
 
@@ -70,13 +71,13 @@ class UserProfile(models.Model):
             is_deleted: Boolean field - do not need to set, it has default value
     """
     user_id = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name="user_profile")
+    profile_image = models.CharField(max_length=750, blank=True, null=True)
     first_name = models.CharField(max_length=20, blank=False, null=False)
     last_name = models.CharField(max_length=20, blank=False, null=False)
     address = models.CharField(max_length=100, blank=False, null=False)
     contact_number = models.CharField(max_length=15, blank=False, null=False)
     longitude = models.CharField(max_length=30, blank=False, null=False)
     latitude = models.CharField(max_length=30, blank=False, null=False)
-    # operating_hours = models.CharField(max_length=500, blank=False, null=False)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(default=timezone.now)
     is_deleted = models.BooleanField(default=False)
@@ -121,6 +122,7 @@ class BusinessProfile(models.Model):
                is_deleted: Boolean field - do not need to set, it has default value
        """
     business_name = models.CharField(max_length=20, blank=False, null=False)
+    business_profile_image = models.CharField(max_length=750, blank=True, null=True)
     address = models.CharField(max_length=100, blank=False, null=False)
     business_contact_number = models.CharField(max_length=15, blank=False, null=False)
     longitude = models.CharField(max_length=30, blank=False, null=False)
@@ -157,3 +159,28 @@ class BusinessManager(models.Model):
 
     class Meta:
         db_table = "business_manager"
+
+
+class SMSOTPVerification(models.Model):
+    """
+        This class in inherited from models.Model class
+
+        Fields:
+            created_at: DateTime field - do not need to set, it has default value
+            updated_at: DateTime field - do not need to set, it has default value
+            is_deleted: Boolean field - do not need to set, it has default value
+            user_id: Foreign Key from CustomUser model - Mandatory field
+            otp_str: CharField - OTP will be saved in this field - Mandatory field
+            expired_at: DateTime field - do not need to set, it has default value
+            is_expired: Boolean field - do not need to set, it has default value
+        """
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(default=timezone.now)
+    is_deleted = models.BooleanField(default=False)
+    user_id = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="SMS_otp")
+    otp_str = models.CharField(max_length=6, blank=False, null=False)
+    expired_at = models.DateTimeField(default=timezone.now)
+    is_expired = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = "sms_otp_verification"

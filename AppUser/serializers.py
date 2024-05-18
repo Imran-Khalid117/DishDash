@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import CustomUser, OTPViewSet, UserProfile, UserType, BusinessProfile, BusinessManager
+from .models import CustomUser, UserProfile, UserType, BusinessProfile, BusinessManager, OTPVerification, \
+    SMSOTPVerification
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
@@ -10,6 +11,19 @@ class CustomUserSerializer(serializers.ModelSerializer):
         'id', 'email', 'username', 'password', 'created_at', 'updated_at', 'is_deleted'
 
     """
+
+    def __init__(self, *args, **kwargs):
+        # Get the context passed during serialization
+        fields_to_serialize = kwargs.pop('fields', None)
+
+        super().__init__(*args, **kwargs)
+
+        if fields_to_serialize:
+            # Filter the fields based on the scenario
+            allowed = set(fields_to_serialize)
+            existing = set(self.fields.keys())
+            for field_name in existing - allowed:
+                self.fields.pop(field_name)
 
     class Meta:
         model = CustomUser
@@ -27,7 +41,21 @@ class OTPViewSetSerializer(serializers.ModelSerializer):
         """
 
     class Meta:
-        model = OTPViewSet
+        model = OTPVerification
+        fields = ['id', 'user_id', 'otp_str', 'is_expired']
+
+
+class SMSOTPVerificationSerializer(serializers.ModelSerializer):
+    """
+        This class in inherited from serializers.ModelSerializer class.
+
+        Fields to show:
+           'id', 'user_id', 'otp_str', 'is_expired'
+
+        """
+
+    class Meta:
+        model = SMSOTPVerification
         fields = ['id', 'user_id', 'otp_str', 'is_expired']
 
 
@@ -36,11 +64,13 @@ class UserProfileSerializer(serializers.ModelSerializer):
             This class in inherited from serializers.ModelSerializer class.
 
             Fields to show:
-               'id', 'user_id', 'first_name', 'last_name', 'address', 'contact_number','longitude', 'latitude'
+               'id', 'user_id', 'profile_image', 'first_name', 'last_name', 'address', 'contact_number','longitude', 'latitude'
             """
+
     class Meta:
         model = UserProfile
-        fields = ['id', 'user_id', 'first_name', 'last_name', 'address', 'contact_number','longitude', 'latitude']
+        fields = ['id', 'user_id', 'first_name', 'last_name', 'address', 'contact_number',
+                  'longitude', 'latitude', 'profile_image']
 
 
 class UserTypeSerializer(serializers.ModelSerializer):
@@ -65,6 +95,7 @@ class UserTypeSerializer(serializers.ModelSerializer):
         ModelViewSet Usage: Simply use your ModelViewSet subclass as usual without overriding the create method.
         The ModelViewSet will utilize your serializer's create method to handle the creation of instances.
     """
+
     # Rolls_type = serializers.ListField(child=serializers.CharField(max_length=50))
 
     class Meta:
@@ -77,12 +108,14 @@ class BusinessProfileSerializer(serializers.ModelSerializer):
         This class in inherited from serializers.ModelSerializer class.
 
         Fields to show:
-           'id', 'business_name', 'address', 'business_contact_number', 'longitude', 'latitude', 'operating_hours'
+           'id', 'business_name', 'address', 'business_contact_number', 'longitude', 'latitude', 'operating_hours',
+           'business_profile_image'
     """
+
     class Meta:
         model = BusinessProfile
         fields = ['id', 'business_name', 'address', 'business_contact_number',
-                  'longitude', 'latitude', 'operating_hours']
+                  'longitude', 'latitude', 'operating_hours', 'business_profile_image']
 
 
 class BusinessManagerSerializer(serializers.ModelSerializer):
@@ -92,7 +125,7 @@ class BusinessManagerSerializer(serializers.ModelSerializer):
           Fields to show:
             "id", "user_id", "business_pofile_id", "roll_name"
       """
+
     class Meta:
         model = BusinessManager
-        fields = ["id", "user_id", "business_pofile_id", "user_type_id","roll_name"]
-
+        fields = ["id", "user_id", "business_pofile_id", "user_type_id", "roll_name"]

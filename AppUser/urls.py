@@ -1,16 +1,13 @@
 from django.urls import path
-from rest_framework.routers import SimpleRouter
-from AppUser.views import CustomUserViewSets, OTPViewSetCreateAPIView
+from AppUser.views import PublicUserViewSet, OTPViewSetCreateAPIView, UserProfileViewSet, \
+    BusinessProfileViewSet
+from rest_framework.routers import DefaultRouter
 
-router = SimpleRouter()
-router.register(f'CustomUser', CustomUserViewSets)
-router.register(f'OTPViewSet', OTPViewSetCreateAPIView)
+router = DefaultRouter()
+router.register(f'user', PublicUserViewSet)
+router.register(f"otp", OTPViewSetCreateAPIView)
+router.register(f"userprofile", UserProfileViewSet)
+router.register(f"business_profile", BusinessProfileViewSet)
 
-urlpatterns = [
-    path("CustomUser/signup/", CustomUserViewSets.as_view({'post': 'signup'}), name="signup"),
-    path("CustomUser/login/", CustomUserViewSets.as_view({'post': 'login'}), name="login"),
-    path("CustomUser/logout/", CustomUserViewSets.as_view({'post': 'logout'}), name="logout"),
-    path("OTPViewSet/new_otp/", OTPViewSetCreateAPIView.as_view({'post': 'new_otp'}), name="new_otp"),
-    path("OTPViewSet/verify_otp/", OTPViewSetCreateAPIView.as_view({'post': 'verify_otp'}), name="verify_otp"),
+urlpatterns = router.urls
 
-]

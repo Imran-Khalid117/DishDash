@@ -15,17 +15,8 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from rest_framework.routers import SimpleRouter
-from AppUser.views import UserProfileViewSet, UserTypeViewSet, BusinessProfileViewSet, BusinessManagerViewSet
-
-router = SimpleRouter()
-router.register(r'UserProfile', UserProfileViewSet)
-router.register(r'UserType', UserTypeViewSet)
-router.register(r'BusinessProfile', BusinessProfileViewSet)
-router.register(r'BusinessManager', BusinessManagerViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path("", include("AppUser.urls")),
-    path("", include(router.urls))
 ]
